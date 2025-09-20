@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Order Lookup Service (vibecoded html)</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .container {
+            border: 1px solid #ddd;
+            padding: 20px;
+            border-radius: 5px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        input {
+            padding: 8px;
+            width: 300px;
+            margin-right: 10px;
+        }
+        button {
+            padding: 8px 15px;
+            background: #007bff;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        #result {
+            margin-top: 20px;
+            white-space: pre-wrap;
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 4px;
+            overflow: auto;
+        }
+        .error {
+            color: #dc3545;
+        }
+        .stats {
+            margin-top: 10px;
+            font-size: 0.9em;
+            color: #6c757d;
+        }
+    </style>
+</head>
+<body>
+    <h1>Order Lookup Service</h1>
+    <div class="container">
+        <h2>Find Order by UID</h2>
+        <input type="text" id="order_uid" placeholder="Enter order UID (e.g., b563feb7b2b84b6test)">
+        <button onclick="searchOrder()">Search</button>
+        <div class="stats">Enter order UID and press Search</div>
+        <div id="result"></div>
+    </div>
+
+    <script>
+        function searchOrder() {
+            const uid = document.getElementById('order_uid').value.trim();
+            if (!uid) {
+                showError('Please enter an order UID');
+                return;
+            }
+            
+            const resultDiv = document.getElementById('result');
+            const statsDiv = document.querySelector('.stats');
+            
+            resultDiv.innerHTML = 'Loading...';
+            statsDiv.textContent = `Searching for order: ${uid}`;
+            
+            const start = Date.now();
+            
+            fetch(`/api/v1/order/${encodeURIComponent(uid)}`)
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Order not found');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    const duration = Date.now() - start;
+                    resultDiv.innerHTML = `<pre>${JSON.stringify(data, null, 2)}</pre>`;
+                    statsDiv.textContent = `Found order in ${duration}ms`;
+                })
+                .catch(error => {
+                    showError(error.message);
+                });
+        }
+        
+        function showError(message) {
+            const resultDiv = document.getElementById('result');
+            const statsDiv = document.querySelector('.stats');
+            
+            resultDiv.innerHTML = `<div class="error">${message}</div>`;
+            statsDiv.textContent = 'Error occurred during search';
+        }
+    </script>
+</body>
+</html>

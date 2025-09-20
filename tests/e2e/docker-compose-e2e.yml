@@ -1,0 +1,19 @@
+version: '3.9'
+
+services:
+  e2e-test:
+    build:
+      context: ../..
+      dockerfile: tests/e2e/Dockerfile
+    container_name: order-e2e-test
+    depends_on:
+      app:
+        condition: service_healthy
+    networks:
+      - app-network
+    environment:
+      KAFKA_BROKERS: kafka:29092
+      APP_HOST: app
+      APP_PORT: 8080
+      E2E_TEST: "true"
+    command: ["go", "test", "-v", "./e2e/..."]

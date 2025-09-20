@@ -1,0 +1,201 @@
+# --- СЕТИ ---
+networks:
+  app-network:
+    driver: bridge
+    name: app-network # Явно задаем имя сети
+
+# --- ТОМА ---
+volumes:
+  pgdata: # Для хранения данных PostgreSQL
+  prometheus_data: # Для хранения данных Prometheus
+  grafana_data: # Для хранения данных Grafana
+
+# --- СЕРВИСЫ ---
+services:
+  # -------------------- ИНФРАСТРУКТУРА --------------------
+
+  db:
+    image: postgres:16-alpine
+    container_name: order-db
+    # Переменные окружения для инициализации PostgreSQL
+    environment:
+      POSTGRES_DB: ${DB_NAME:-orders_db}
+      POSTGRES_USER: ${DB_USER:-postgres}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-postgres}
+      # POSTGRES_INITDB_ARGS: "--auth-host=scram-sha-256" # Опционально, для усиления безопасности
+    ports:
+      - "${DB_PORT:-5432}:${DB_PORT:-5432}" # Маппинг порта можно сделать через env
+    volumes:
+      - pgdata:/var/lib/postgresql/data # Монтируем том для персистентности данных
+    networks:
+      - app-network
+    # Проверка готовности PostgreSQL
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-postgres} -d ${DB_NAME:-orders_db}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s # Даем БД время на инициализацию
+    restart: unless-stopped
+
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.6.1
+    container_name: order-zookeeper
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+    ports:
+      - "2181:2181"
+    networks:
+      - app-network
+    restart: unless-stopped
+
+  kafka:
+    image: confluentinc/cp-kafka:7.6.1
+    container_name: order-kafka
+    depends_on:
+      - zookeeper
+    ports:
+      - "9092:9092" # Порт для внешних клиентов (localhost:9092)
+    networks:
+      - app-network
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: 'zookeeper:2181' # Внутреннее имя сервиса
+      # Настройка слушателей для внутренней и внешней коммуникации
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_INTERNAL:PLAINTEXT
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://localhost:9092,PLAINTEXT_INTERNAL://kafka:29092
+      # Репликация для standalone
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      # Автоматическое создание топиков (удобно для разработки)
+      # KAFKA_CREATE_TOPICS: "orders:1:1,dlq-orders:1:1" # Можно убрать, если создаём через миграции или вручную
+    restart: unless-stopped
+
+  # -------------------- МИГРАЦИИ --------------------
+  # Отдельный сервис для применения миграций БД
+  db-migrator:
+    image: migrate/migrate
+    container_name: order-db-migrator
+    depends_on:
+      db:
+        condition: service_healthy # Ждем, пока БД будет готова
+    networks:
+      - app-network
+    volumes:
+      # Монтируем локальную директорию с миграциями внутрь контейнера
+      - ./migrations:/migrations:ro
+    # Команда для применения всех "up" миграций
+    command: ["-path", "/migrations", "-database", "postgres://postgres:postgres@db:5432/orders_db?sslmode=disable", "up"]
+    restart: "no" # Не перезапускать после успешного завершения
+
+  # -------------------- ПРИЛОЖЕНИЕ --------------------
+  app:
+    # Сборка из Dockerfile в корне проекта
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: order-service-app
+    # Зависимости: БД должна быть готова и миграции применены
+    depends_on:
+      db:
+        condition: service_healthy
+      kafka:
+        condition: service_started # или service_healthy, если есть проверка
+      db-migrator: # <-- Добавлено
+        condition: service_completed_successfully # Ждем успешного завершения миграций
+    ports:
+      # Основной порт HTTP API
+      - "${HTTP_PORT:-8080}:${HTTP_PORT:-8080}"
+      # Порт для метрик Prometheus
+      - "${METRICS_PORT:-8081}:${METRICS_PORT:-8081}"
+    networks:
+      - app-network
+    # Переменные окружения, переопределяющие значения по умолчанию из .env
+    # Это позволяет легко настраивать сервис в разных средах (dev, staging)
+    environment:
+      # Указываем путь к конфигу внутри контейнера
+      - CONFIG_PATH=/app/configs/dev.env
+      # Переопределяем хост БД на имя сервиса внутри Docker сети
+      - DB_HOST=db
+      # Переопределяем брокеры Kafka на внутренние адреса
+      - KAFKA_BROKERS=kafka:29092
+      # Настройки HTTP сервера
+      - HTTP_HOST=0.0.0.0
+      - HTTP_PORT=${HTTP_PORT:-8080}
+      # Настройки метрик
+      - METRICS_HOST=0.0.0.0
+      - METRICS_PORT=${METRICS_PORT:-8081}
+      # Другие переменные по необходимости...
+    # Монтируем статические файлы (веб-интерфейс) внутрь контейнера
+    # Предполагается, что в Dockerfile они копируются, но для разработки можно смонтировать
+    # volumes:
+    #   - ./web:/app/web:ro # Путь внутри контейнера должен соответствовать тому, где приложение ищет файлы
+    restart: on-failure # Перезапускать при сбое
+
+  # -------------------- МОНИТОРИНГ --------------------
+  prometheus:
+    image: prom/prometheus:v2.53.0
+    container_name: order-prometheus
+    volumes:
+      # Монтируем конфигурацию Prometheus
+      - ./volumes/prometheus:/etc/prometheus:ro
+      # Монтируем том для персистентности данных
+      - prometheus_data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/usr/share/prometheus/console_libraries'
+      - '--web.console.templates=/usr/share/prometheus/consoles'
+    ports:
+      - "9090:9090"
+    networks:
+      - app-network
+    # Prometheus зависит от приложения, чтобы получить метрики
+    depends_on:
+      - app
+    restart: unless-stopped
+
+  grafana:
+    image: grafana/grafana:11.1.0
+    container_name: order-grafana
+    ports:
+      - "3000:3000"
+    volumes:
+      # Монтируем том для персистентности данных Grafana
+      - grafana_data:/var/lib/grafana
+      # Монтируем конфигурацию Grafana (datasources, dashboards)
+      - ./volumes/grafana:/etc/grafana:ro
+    environment:
+      # Начальные учетные данные администратора
+      - GF_SECURITY_ADMIN_USER=${GRAFANA_ADMIN_USER:-admin}
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD:-grafana}
+      - GF_USERS_ALLOW_SIGN_UP=false # Отключаем регистрацию
+    networks:
+      - app-network
+    depends_on:
+      # Grafana зависит от Prometheus как источника данных
+      - prometheus
+    restart: unless-stopped
+
+  # -------------------- KAFKA PRODUCER (ЭМУЛЯТОР) --------------------
+  # Сервис для отправки тестовых сообщений в Kafka
+  kafka-producer:
+    # Сборка из Dockerfile.producer в корне проекта
+    build:
+      context: .
+      dockerfile: Dockerfile.producer
+    container_name: order-kafka-producer
+    depends_on:
+      kafka:
+        condition: service_started
+    networks:
+      - app-network
+    environment:
+      # Указываем внутренний адрес Kafka
+      - KAFKA_BROKERS=kafka:29092
+      - KAFKA_TOPIC=orders # Топик, в который отправлять сообщения
+    # restart: "no" # Обычно запускается один раз, можно не перезапускать
+    # Команда запускается по умолчанию из Dockerfile, но можно переопределить
