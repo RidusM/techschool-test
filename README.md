@@ -1,6 +1,5 @@
 # Order Service - Микросервис для обработки заказов
 
-[![Go Report Card](https://goreportcard.com/badge/github.com/your-username/order-service)](https://goreportcard.com/report/github.com/your-username/order-service) 
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
 Высоконагруженный микросервис для обработки заказов с использованием Kafka, PostgreSQL и кэширования. Разработан как решение тестового задания для Wildberries.
@@ -293,11 +292,6 @@ docker build -t order-service .
 docker run -p 8080:8080 order-service
 ```
 
-### Kubernetes
-```bash
-kubectl apply -f k8s/
-```
-
 ## 🔒 Безопасность
 
 - Валидация всех входных данных
@@ -316,10 +310,3 @@ kubectl apply -f k8s/
 ## 📄 Лицензия
 
 MIT License - см. файл [LICENSE](LICENSE) для деталей.
-
----
-
-**Контакты**
-- Email: your-email@example.com
-- GitHub: [@your-username](https://github.com/your-username)
-
