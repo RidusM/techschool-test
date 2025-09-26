@@ -322,3 +322,4 @@ MIT License - см. файл [LICENSE](LICENSE) для деталей.
 **Контакты**
 - Email: your-email@example.com
 - GitHub: [@your-username](https://github.com/your-username)
+

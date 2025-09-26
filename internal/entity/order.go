@@ -1,6 +1,8 @@
 package entity
 
 import (
+	"time"
+
 	"github.com/google/uuid"
 )
 
@@ -17,6 +19,6 @@ type Order struct {
 	DeliveryService   string    `json:"delivery_service"   validate:"required,max=50"`
 	Shardkey          string    `json:"shardkey"           validate:"required,max=10"`
 	SmID              int       `json:"sm_id"              validate:"required,gte=0"`
-	DateCreated       string    `json:"date_created"       validate:"required"`
+	DateCreated       time.Time `json:"date_created"       validate:"required"`
 	OofShard          string    `json:"oof_shard"          validate:"required,len=1"`
 }

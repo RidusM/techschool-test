@@ -33,12 +33,15 @@ func NewOrderHandler(
 	router.Use(gin.Recovery())
 
 	h.router = router
+
+	h.router.LoadHTMLGlob("web/*.html")
+	h.router.Static("/static", "./web")
+
 	h.setupRoutes()
 
 	return h
 }
 
 func (h *OrderHandler) Engine() *gin.Engine {
-	h.router.LoadHTMLGlob("web/*.html")
 	return h.router
 }

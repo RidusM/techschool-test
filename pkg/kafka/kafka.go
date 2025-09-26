@@ -58,7 +58,7 @@ func checkKafkaConnection(brokers []string, log logger.Logger) error {
 
 		if err = conn.Close(); err != nil {
 			log.Warnw("failed to close connection",
-				"operation", op,
+				"op", op,
 				"broker", broker,
 				"error", err)
 		}

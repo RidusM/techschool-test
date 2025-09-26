@@ -28,7 +28,7 @@ func main() {
 	ctx, cancel := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer cancel()
 
-	log.Infow("application starting", "env", cfg.Env)
+	log.Infow("application starting")
 
 	err = app.Run(ctx, cfg, log)
 	if err != nil {

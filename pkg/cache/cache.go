@@ -4,9 +4,7 @@ import (
 	"time"
 )
 
-// This can't generate mock's for interface with generic's
-// You can edit this interface, (for this service replace K=uuid.UUID, V = *entity.Order)
-//go:generate mockgen -source=cache.go -destination=mock/cache.go -package=mock_cache
+//go:generate mockgen -source=cache.go -destination=mock/cache.go -package=mock_cache -typed
 
 type Cache[K comparable, V any] interface {
 	Get(key K) (V, bool)

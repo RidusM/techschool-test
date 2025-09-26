@@ -1,3 +1,4 @@
+//nolint:paralleltest, gocognit
 package cache_test
 
 import (
@@ -9,7 +10,7 @@ import (
 	mock_logger "wbtest/pkg/logger/mock"
 	mock_metric "wbtest/pkg/metric/mock"
 
-	"github.com/golang/mock/gomock"
+	"go.uber.org/mock/gomock"
 )
 
 type cacheOperation struct {
@@ -38,6 +39,8 @@ type getTestExpected struct {
 }
 
 func TestLRUCache_GetPut(t *testing.T) {
+	t.Parallel()
+
 	key1, key2, key3 := 1, 2, 3
 	value1, value2, value3 := "one", "two", "three"
 	noValue := struct {
@@ -199,6 +202,8 @@ type ttlTestExpected struct {
 }
 
 func TestLRUCache_TTL(t *testing.T) {
+	t.Parallel()
+
 	key := 1
 	value := "one"
 
@@ -286,6 +291,8 @@ type hasTestInput struct {
 }
 
 func TestLRUCache_Has(t *testing.T) {
+	t.Parallel()
+
 	key := 1
 	value := "one"
 
@@ -367,6 +374,8 @@ type onEvictedTestExpected struct {
 }
 
 func TestLRUCache_OnEvicted(t *testing.T) {
+	t.Parallel()
+
 	testCases := []struct {
 		desc     string
 		input    onEvictedTestInput
@@ -464,6 +473,8 @@ func TestLRUCache_OnEvicted(t *testing.T) {
 }
 
 func TestLRUCache_Capacity(t *testing.T) {
+	t.Parallel()
+
 	testCases := []struct {
 		desc     string
 		capacity int
@@ -495,6 +506,8 @@ func TestLRUCache_Capacity(t *testing.T) {
 }
 
 func TestLRUCache_NewLRUCache(t *testing.T) {
+	t.Parallel()
+
 	testCases := []struct {
 		desc      string
 		capacity  int

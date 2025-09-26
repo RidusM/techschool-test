@@ -129,8 +129,18 @@ func (os *OrderService) RestoreCache(ctx context.Context) error {
 			)
 			continue
 		}
-		os.cache.Put(order.OrderUID, order, os.cacheTTL)
-		restoredCount++
+
+		if order.Delivery != nil && order.Payment != nil && len(order.Items) > 0 {
+			os.cache.Put(order.OrderUID, order, os.cacheTTL)
+			restoredCount++
+		} else {
+			log.LogAttrs(ctx, logger.WarnLevel, "skipping incomplete order in cache restoration",
+				logger.String("order_uid", order.OrderUID.String()),
+				logger.Bool("has_delivery", order.Delivery != nil),
+				logger.Bool("has_payment", order.Payment != nil),
+				logger.Int("items_count", len(order.Items)),
+			)
+		}
 	}
 
 	log.LogAttrs(ctx, logger.InfoLevel, "cache restoration finished",
@@ -237,6 +247,7 @@ func (os *OrderService) createOrderWithTransaction(
 		},
 	)
 	if err != nil {
+		// nolint: wrapcheck
 		return nil, err
 	}
 
@@ -250,6 +261,7 @@ func (os *OrderService) createOrderInTx(
 ) (*entity.Order, error) {
 	order, err := os.orderRepo.Create(ctx, tx, order)
 	if err != nil {
+		// nolint: wrapcheck
 		return nil, err
 	}
 	return order, nil
@@ -263,6 +275,7 @@ func (os *OrderService) createDeliveryInTx(
 ) (*entity.Delivery, error) {
 	delivery, err := os.deliveryRepo.Create(ctx, tx, orderUID, delivery)
 	if err != nil {
+		// nolint: wrapcheck
 		return nil, err
 	}
 	return delivery, nil
@@ -276,6 +289,7 @@ func (os *OrderService) createPaymentInTx(
 ) (*entity.Payment, error) {
 	payment, err := os.paymentRepo.Create(ctx, tx, orderUID, payment)
 	if err != nil {
+		// nolint: wrapcheck
 		return nil, err
 	}
 	return payment, nil
@@ -288,6 +302,7 @@ func (os *OrderService) createItemsInTx(
 	items []*entity.Item,
 ) error {
 	if err := os.itemRepo.Create(ctx, tx, orderUID, items); err != nil {
+		// nolint: wrapcheck
 		return err
 	}
 	return nil
@@ -316,13 +331,18 @@ func (os *OrderService) GetOrder(ctx context.Context, orderUID uuid.UUID) (*enti
 	}()
 
 	if cached, found := os.cache.Get(orderUID); found {
-		duration := time.Since(startTime)
-		log.LogAttrs(ctx, logger.InfoLevel, "order served from cache",
-			logger.String("op", op),
+		if cached.Delivery != nil && cached.Payment != nil && len(cached.Items) > 0 {
+			duration := time.Since(startTime)
+			log.LogAttrs(ctx, logger.InfoLevel, "order served from cache",
+				logger.String("op", op),
+				logger.String("order_uid", orderUID.String()),
+				logger.String("duration", duration.String()),
+			)
+			return cached, nil
+		}
+		log.LogAttrs(ctx, logger.DebugLevel, "cache contains incomplete order, fetching from DB",
 			logger.String("order_uid", orderUID.String()),
-			logger.String("duration", duration.String()),
 		)
-		return cached, nil
 	}
 
 	log.LogAttrs(ctx, logger.DebugLevel, "cache miss",
@@ -371,6 +391,7 @@ func (os *OrderService) fetchOrderFromDB(
 
 	order, err := os.orderRepo.GetByOrderUID(ctx, orderUID)
 	if err != nil {
+		// nolint: wrapcheck
 		return nil, err
 	}
 
@@ -423,6 +444,7 @@ func (os *OrderService) fetchOrderComponents(
 	})
 
 	if err := g.Wait(); err != nil {
+		// nolint: wrapcheck
 		return nil, nil, nil, err
 	}
 

@@ -82,7 +82,7 @@ type (
 
 	Metrics struct {
 		Host              string        `env:"HOST"                validate:"required"                 env-default:"0.0.0.0"`
-		Port              string        `env:"PORT"                validate:"required,gte=1,lte=65535" env-default:"9090"`
+		Port              string        `env:"PORT"                validate:"required,gte=1,lte=65535" env-default:"8081"`
 		ReadTimeout       time.Duration `env:"READ_TIMEOUT"        validate:"gte=10ms,lte=30s"         env-default:"5s"`
 		WriteTimeout      time.Duration `env:"WRITE_TIMEOUT"       validate:"gte=10ms,lte=30s"         env-default:"5s"`
 		ReadHeaderTimeout time.Duration `env:"READ_HEADER_TIMEOUT" validate:"gte=10ms,lte=30s"         env-default:"5s"`

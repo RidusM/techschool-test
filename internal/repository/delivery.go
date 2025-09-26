@@ -88,6 +88,7 @@ func (dr *DeliveryRepository) GetByOrderUID(
 
 	result := &entity.Delivery{}
 	err = dr.db.Pool.QueryRow(ctx, sql, args...).Scan(
+		&orderUID,
 		&result.Name,
 		&result.Phone,
 		&result.Zip,

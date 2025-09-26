@@ -29,7 +29,7 @@ func (dr *OrderRepository) Create(
 ) (*entity.Order, error) {
 	const op = "repository.order.Create"
 
-	query := dr.db.Builder.Insert("order").
+	query := dr.db.Builder.Insert(`"orders"`).
 		Columns("order_uid", "track_number", "entry", "locale", "internal_signature", "customer_id", "delivery_service", "shardkey", "sm_id", "date_created", "oof_shard").
 		Values(
 			order.OrderUID,
@@ -83,7 +83,7 @@ func (dr *OrderRepository) GetByOrderUID(
 	const op = "repository.order.Get"
 
 	query := dr.db.Builder.Select("*").
-		From("order").
+		From(`"orders"`).
 		Where(squirrel.Eq{"order_uid": orderUID}).
 		Limit(1)
 
@@ -119,7 +119,7 @@ func (dr *OrderRepository) GetByOrderUID(
 func (dr *OrderRepository) GetAllOrderUIDs(ctx context.Context) ([]uuid.UUID, error) {
 	const op = "repository.order.GetAllOrderUIDs"
 
-	query := dr.db.Builder.Select("order_uid").From("orders")
+	query := dr.db.Builder.Select("order_uid").From(`"orders"`)
 
 	sql, args, err := query.ToSql()
 	if err != nil {

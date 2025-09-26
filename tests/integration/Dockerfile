@@ -5,8 +5,13 @@ WORKDIR /app
 COPY go.mod go.sum ./
 RUN go mod download && go mod verify
 
-COPY internal/ ./internal/
-COPY pkg/ ./pkg/
-COPY tests/integration/ ./tests/integration/
+COPY . .
 
-CMD ["go", "test", "-v", "./tests/integration/main"]
+RUN go test -c ./tests/integration/main -o integration-test
+
+FROM alpine:latest
+
+COPY --from=builder /app/integration-test ./integration-test
+COPY --from=builder /app/configs ./configs
+
+CMD ["./integration-test", "-test.v"]

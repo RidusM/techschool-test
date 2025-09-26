@@ -74,6 +74,7 @@ func NewPostgres(config *config.Postgres, log logger.Logger, opts ...Option) (*P
 		if err == nil {
 			return pg, nil
 		}
+		//nolint:gosec
 		jitter := time.Duration(
 			rand.Int64N(int64(currentBackoff * _backoffMultiplier)),
 		)

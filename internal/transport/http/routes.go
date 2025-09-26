@@ -3,6 +3,8 @@ package httpt
 import (
 	"net/http"
 
+	_ "wbtest/docs" // for swagger
+
 	"github.com/gin-gonic/gin"
 	swaggerFiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
@@ -25,6 +27,10 @@ import (
 func (h *OrderHandler) setupRoutes() {
 	h.router.GET("/health", func(c *gin.Context) {
 		c.Status(http.StatusOK)
+	})
+
+	h.router.GET("/", func(c *gin.Context) {
+		c.HTML(http.StatusOK, "index.html", gin.H{})
 	})
 
 	orders := h.router.Group("/orders")

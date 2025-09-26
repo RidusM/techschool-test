@@ -195,6 +195,7 @@ func ProcessWithRetry(
 		if err = ctx.Err(); err != nil {
 			return fmt.Errorf("%s: context: %w", op, err)
 		}
+		//nolint:gosec
 		jitter := time.Duration(
 			rand.Int64N(int64(currentBackoff * _backoffMultiplier)),
 		)
@@ -203,7 +204,7 @@ func ProcessWithRetry(
 		}
 
 		log.LogAttrs(ctx, logger.InfoLevel, "Retrying message processing",
-			logger.String("operation", op),
+			logger.String("op", op),
 			logger.Int("attempt", attemptCount),
 			logger.String("retry_after", jitter.String()),
 			logger.Any("error", ctx.Err()),
@@ -220,7 +221,7 @@ func ProcessWithRetry(
 		}
 
 		log.LogAttrs(ctx, logger.ErrorLevel, "message processing failed",
-			logger.String("operation", op),
+			logger.String("op", op),
 			logger.Int64("offset", msg.Offset),
 			logger.Int("retry_count", attemptCount),
 			logger.Any("error", err),

@@ -75,7 +75,7 @@
             
             const start = Date.now();
             
-            fetch(`/api/v1/order/${encodeURIComponent(uid)}`)
+            fetch(`/orders/${encodeURIComponent(uid)}`)
                 .then(response => {
                     if (!response.ok) {
                         throw new Error('Order not found');

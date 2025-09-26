@@ -94,6 +94,7 @@ func (dr *PaymentRepository) GetByOrderUID(
 
 	result := &entity.Payment{}
 	err = dr.db.Pool.QueryRow(ctx, sql, args...).Scan(
+		&orderUID,
 		&result.Transaction,
 		&result.RequestID,
 		&result.Currency,

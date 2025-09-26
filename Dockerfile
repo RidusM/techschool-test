@@ -11,10 +11,12 @@ COPY . .
 RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 \
     go build -a -installsuffix cgo -o ./bin/order-service ./cmd/order-service/main.go
 
-FROM scratch
+FROM alpine:latest
 
 COPY --from=go-builder /app/configs /app/configs
 COPY --from=go-builder /app/migrations /app/migrations
+COPY --from=go-builder /app/docs /app/docs
+COPY --from=go-builder /app/web /web
 
 COPY --from=go-builder /app/bin/order-service /order-service
 

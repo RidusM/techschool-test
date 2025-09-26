@@ -1,8 +1,8 @@
 LOCAL_BIN := $(CURDIR)/bin
 BASE_STACK := docker compose -f docker-compose.yml
-INTEGRATION_TEST_STACK := $(BASE_STACK) -f tests/integration/docker-compose-integration-test.yml
+INTEGRATION_TEST_STACK := docker compose --env-file .env -f tests/integration/docker-compose-integration-test.yml
 INTEGRATION_TEST_DIR := $(CURDIR)/tests/integration
-E2E_TEST_STACK := $(BASE_STACK) -f tests/e2e/docker-compose-e2e.yaml
+E2E_TEST_STACK := docker compose --env-file ../../.env -f tests/e2e/docker-compose-e2e.yml
 E2E_TEST_DIR := $(CURDIR)/tests/e2e
 ALL_STACK := $(BASE_STACK)
 
@@ -24,7 +24,7 @@ deps-audit: ## Check dependencies for vulnerabilities using govulncheck (govulnc
 bin-deps: ## Install development tools (govulncheck, golangci-lint, gci, gofumpt, etc.)
 	@echo "Installing development tools..."
 	go install golang.org/x/vuln/cmd/govulncheck@latest
-	go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
+	go install github.com/golangci/golangci-lint/v2/cmd/golangci-lint@v2.5.0
 	go install github.com/daixiang0/gci@latest
 	go install mvdan.cc/gofumpt@latest
 	go install github.com/segmentio/golines@latest
@@ -66,7 +66,6 @@ swag-v1: ## Generate Swagger documentation
 mock: ## Generate mocks using mockgen
 	@echo "Generating mocks..."
 	mockgen -source ./internal/service/service.go -destination ./internal/repository/mock/repository.go -package=mock_repository
-	mockgen -source ./pkg/storage/postgres/transaction/manager.go -destination ./pkg/storage/postgres/transaction/mock/transaction.go -package mock_transaction
 	mockgen -source ./pkg/cache/cache.go -destination ./pkg/cache/mock/cache.go -package=mock_cache
 	mockgen -source ./pkg/logger/logger.go -destination ./pkg/logger/mock/logger.go -package=mock_logger
 	mockgen -source ./pkg/metric/metrics.go -destination ./pkg/metric/mock/metrics.go -package=mock_metric
@@ -86,6 +85,11 @@ run-producer: deps ## Run the Kafka producer script locally (requires Kafka to b
 .PHONY: compose-up
 compose-up: ## Run infrastructure (db, kafka, zookeeper) only
 	$(BASE_STACK) up --build -d db kafka zookeeper
+	$(BASE_STACK) logs -f
+
+.PHONY: migrate-db
+migrate-db: ## Run migrations for db (requires db to be running)
+	$(BASE_STACK) up --build -d db-migrator
 	$(BASE_STACK) logs -f
 
 .PHONY: compose-up-all
@@ -116,16 +120,11 @@ test: ## Run unit tests with race detector and coverage
 .PHONY: integration-test
 integration-test: ## Run integration tests (requires Docker)
 	@echo "Running integration tests..."
-	$(INTEGRATION_TEST_STACK) up --build --abort-on-container-exit --exit-code-from integration-test	
+	$(INTEGRATION_TEST_STACK) up db -d
+	$(INTEGRATION_TEST_STACK) run --rm db-migrator
+	$(INTEGRATION_TEST_STACK) up integration-test --exit-code-from integration-test
 	$(INTEGRATION_TEST_STACK) down --remove-orphans --volumes
 	@echo "Integration tests completed."
-
-.PHONY: e2e-test
-e2e-test: ## Run end-to-end tests (requires main app to be running)
-	@echo "Running E2E tests..."
-	$(E2E_TEST_STACK) up --build --abort-on-container-exit --exit-code-from e2e-test
-	$(E2E_TEST_STACK) down --remove-orphans --volumes
-	@echo "E2E tests completed."
 
 .PHONY: pre-commit
 pre-commit: swag-v1 mock format linter-golangci test ## Run checks typically done before committing
@@ -166,7 +165,7 @@ docker-prune: ## Remove unused Docker data (stopped containers, networks, images
 .PHONY: docker-rm-volume
 docker-rm-volume: ## Remove Docker volume (example for pgdata)
 	@echo "Removing Docker volume 'pgdata'..."
-	docker volume rm pgdata 
-	docker volume rm prometheus_data
-	docker volume rm grafana_data
+	docker volume rm l1_pgdata 
+	docker volume rm l1_prometheus_data
+	docker volume rm l1_grafana_data
 	@echo "Volume removal attempted."

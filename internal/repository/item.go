@@ -86,8 +86,10 @@ func (dr *ItemRepository) GetListByOrderUID(
 ) ([]*entity.Item, error) {
 	const op = "repository.item.GetListByOrderUID"
 
+	var itemID uuid.UUID
+
 	query := dr.db.Builder.Select("*").
-		From("item").
+		From("items").
 		Where(squirrel.Eq{"order_uid": orderUID})
 
 	sql, args, err := query.ToSql()
@@ -108,6 +110,8 @@ func (dr *ItemRepository) GetListByOrderUID(
 	for rows.Next() {
 		item := &entity.Item{}
 		err = rows.Scan(
+			&itemID,
+			&orderUID,
 			&item.ChrtID,
 			&item.TrackNumber,
 			&item.Price,

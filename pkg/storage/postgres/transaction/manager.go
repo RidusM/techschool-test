@@ -123,6 +123,7 @@ func (tm *manager) withRetry(
 
 	currentBackoff := _defaultBaseRetryDelay
 	for i := range maxAttempts {
+		//nolint:gosec
 		jitter := time.Duration(
 			rand.Int64N(int64(currentBackoff * _backoffMultiplier)),
 		)

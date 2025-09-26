@@ -1,3 +1,4 @@
+// nolint: revive,staticcheck
 // swagger:meta
 package httpt
 

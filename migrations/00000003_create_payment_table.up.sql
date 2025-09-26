@@ -5,7 +5,7 @@ CREATE TABLE payment (
     currency CHAR(3) NOT NULL,
     provider VARCHAR(50) NOT NULL,
     amount INT NOT NULL CHECK (amount > 0),
-    payment_dt TIMESTAMPTZ NOT NULL CHECK (payment_dt > 0),
+    payment_dt BIGINT NOT NULL,
     bank VARCHAR(50) NOT NULL,
     delivery_cost INT NOT NULL CHECK (delivery_cost >= 0),
     goods_total INT NOT NULL CHECK (goods_total >= 0),

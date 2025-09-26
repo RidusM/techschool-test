@@ -1,3 +1,4 @@
+// nolint: gocognit, nestif, maintidx
 package service_test
 
 import (
@@ -15,8 +16,8 @@ import (
 	mock_transaction "wbtest/pkg/storage/postgres/transaction/mock"
 
 	"github.com/brianvoe/gofakeit/v7"
-	"github.com/golang/mock/gomock"
 	"github.com/google/uuid"
+	"go.uber.org/mock/gomock"
 )
 
 func generateFakeDelivery() *entity.Delivery {
@@ -38,7 +39,7 @@ func generateFakePayment() *entity.Payment {
 		Currency:     gofakeit.CurrencyShort(),
 		Provider:     gofakeit.Word(),
 		Amount:       uint64(gofakeit.UintRange(1000, 10000)),
-		PaymentDt:    int64(gofakeit.DateRange(time.Now().AddDate(-1, 0, 0), time.Now()).Unix()),
+		PaymentDt:    gofakeit.DateRange(time.Now().AddDate(-1, 0, 0), time.Now()).Unix(),
 		Bank:         gofakeit.BS(),
 		DeliveryCost: uint64(gofakeit.UintRange(100, 500)),
 		GoodsTotal:   uint64(gofakeit.UintRange(500, 9000)),
@@ -74,18 +75,18 @@ func generateFakeOrder() *entity.Order {
 	return &entity.Order{
 		OrderUID:          orderUID,
 		TrackNumber:       gofakeit.UUID(),
-		Entry:             gofakeit.Word(),
+		Entry:             gofakeit.LetterN(10),
 		Delivery:          generateFakeDelivery(),
 		Payment:           generateFakePayment(),
 		Items:             items,
-		Locale:            gofakeit.Country(),
+		Locale:            gofakeit.LetterN(2),
 		InternalSignature: gofakeit.UUID(),
 		CustomerID:        gofakeit.Username(),
 		DeliveryService:   gofakeit.Word(),
 		Shardkey:          gofakeit.Word(),
 		SmID:              gofakeit.Number(1, 10),
-		DateCreated:       gofakeit.Date().Format(time.RFC3339),
-		OofShard:          gofakeit.Word(),
+		DateCreated:       gofakeit.Date(),
+		OofShard:          gofakeit.LetterN(1),
 	}
 }
 
@@ -99,6 +100,8 @@ type createOrderTestExpected struct {
 }
 
 func TestOrderService_CreateOrder(t *testing.T) {
+	t.Parallel()
+
 	ctx := context.Background()
 
 	testCases := []struct {
@@ -111,7 +114,7 @@ func TestOrderService_CreateOrder(t *testing.T) {
 			itemRepo *mock_repository.MockItemRepository,
 			txManager *mock_transaction.MockManager,
 			logger *mock_logger.MockLogger,
-			cache *mock_cache.MockCache,
+			cache *mock_cache.MockCache[uuid.UUID, *entity.Order],
 			order *entity.Order,
 		)
 		input    createOrderTestInput
@@ -127,7 +130,7 @@ func TestOrderService_CreateOrder(t *testing.T) {
 				itemRepo *mock_repository.MockItemRepository,
 				txManager *mock_transaction.MockManager,
 				logger *mock_logger.MockLogger,
-				cache *mock_cache.MockCache,
+				cache *mock_cache.MockCache[uuid.UUID, *entity.Order],
 				order *entity.Order,
 			) {
 				logger.EXPECT().Ctx(gomock.Any()).Return(logger).AnyTimes()
@@ -142,8 +145,8 @@ func TestOrderService_CreateOrder(t *testing.T) {
 				txManager.EXPECT().ExecuteInTransaction(
 					ctx, "CreateOrder", gomock.Any(),
 				).DoAndReturn(func(
-					ctx context.Context,
-					opName string,
+					_ context.Context,
+					_ string,
 					txFunc func(postgres.QueryExecuter) error,
 				) error {
 					return txFunc(nil)
@@ -183,12 +186,12 @@ func TestOrderService_CreateOrder(t *testing.T) {
 			setup: generateFakeOrder,
 			mocks: func(
 				orderRepo *mock_repository.MockOrderRepository,
-				deliveryRepo *mock_repository.MockDeliveryRepository,
-				paymentRepo *mock_repository.MockPaymentRepository,
-				itemRepo *mock_repository.MockItemRepository,
-				txManager *mock_transaction.MockManager,
+				_ *mock_repository.MockDeliveryRepository,
+				_ *mock_repository.MockPaymentRepository,
+				_ *mock_repository.MockItemRepository,
+				_ *mock_transaction.MockManager,
 				logger *mock_logger.MockLogger,
-				cache *mock_cache.MockCache,
+				_ *mock_cache.MockCache[uuid.UUID, *entity.Order],
 				order *entity.Order,
 			) {
 				logger.EXPECT().Ctx(gomock.Any()).Return(logger).AnyTimes()
@@ -211,12 +214,12 @@ func TestOrderService_CreateOrder(t *testing.T) {
 			},
 			mocks: func(
 				orderRepo *mock_repository.MockOrderRepository,
-				deliveryRepo *mock_repository.MockDeliveryRepository,
-				paymentRepo *mock_repository.MockPaymentRepository,
-				itemRepo *mock_repository.MockItemRepository,
-				txManager *mock_transaction.MockManager,
+				_ *mock_repository.MockDeliveryRepository,
+				_ *mock_repository.MockPaymentRepository,
+				_ *mock_repository.MockItemRepository,
+				_ *mock_transaction.MockManager,
 				logger *mock_logger.MockLogger,
-				cache *mock_cache.MockCache,
+				_ *mock_cache.MockCache[uuid.UUID, *entity.Order],
 				order *entity.Order,
 			) {
 				logger.EXPECT().Ctx(gomock.Any()).Return(logger).AnyTimes()
@@ -249,12 +252,12 @@ func TestOrderService_CreateOrder(t *testing.T) {
 			},
 			mocks: func(
 				orderRepo *mock_repository.MockOrderRepository,
-				deliveryRepo *mock_repository.MockDeliveryRepository,
-				paymentRepo *mock_repository.MockPaymentRepository,
-				itemRepo *mock_repository.MockItemRepository,
-				txManager *mock_transaction.MockManager,
+				_ *mock_repository.MockDeliveryRepository,
+				_ *mock_repository.MockPaymentRepository,
+				_ *mock_repository.MockItemRepository,
+				_ *mock_transaction.MockManager,
 				logger *mock_logger.MockLogger,
-				cache *mock_cache.MockCache,
+				_ *mock_cache.MockCache[uuid.UUID, *entity.Order],
 				order *entity.Order,
 			) {
 				logger.EXPECT().Ctx(gomock.Any()).Return(logger).AnyTimes()
@@ -287,12 +290,12 @@ func TestOrderService_CreateOrder(t *testing.T) {
 			},
 			mocks: func(
 				orderRepo *mock_repository.MockOrderRepository,
-				deliveryRepo *mock_repository.MockDeliveryRepository,
-				paymentRepo *mock_repository.MockPaymentRepository,
-				itemRepo *mock_repository.MockItemRepository,
-				txManager *mock_transaction.MockManager,
+				_ *mock_repository.MockDeliveryRepository,
+				_ *mock_repository.MockPaymentRepository,
+				_ *mock_repository.MockItemRepository,
+				_ *mock_transaction.MockManager,
 				logger *mock_logger.MockLogger,
-				cache *mock_cache.MockCache,
+				_ *mock_cache.MockCache[uuid.UUID, *entity.Order],
 				order *entity.Order,
 			) {
 				logger.EXPECT().Ctx(gomock.Any()).Return(logger).AnyTimes()
@@ -325,12 +328,12 @@ func TestOrderService_CreateOrder(t *testing.T) {
 			},
 			mocks: func(
 				orderRepo *mock_repository.MockOrderRepository,
-				deliveryRepo *mock_repository.MockDeliveryRepository,
-				paymentRepo *mock_repository.MockPaymentRepository,
-				itemRepo *mock_repository.MockItemRepository,
-				txManager *mock_transaction.MockManager,
+				_ *mock_repository.MockDeliveryRepository,
+				_ *mock_repository.MockPaymentRepository,
+				_ *mock_repository.MockItemRepository,
+				_ *mock_transaction.MockManager,
 				logger *mock_logger.MockLogger,
-				cache *mock_cache.MockCache,
+				_ *mock_cache.MockCache[uuid.UUID, *entity.Order],
 				order *entity.Order,
 			) {
 				logger.EXPECT().Ctx(gomock.Any()).Return(logger).AnyTimes()
@@ -359,12 +362,12 @@ func TestOrderService_CreateOrder(t *testing.T) {
 			setup: generateFakeOrder,
 			mocks: func(
 				orderRepo *mock_repository.MockOrderRepository,
-				deliveryRepo *mock_repository.MockDeliveryRepository,
-				paymentRepo *mock_repository.MockPaymentRepository,
-				itemRepo *mock_repository.MockItemRepository,
+				_ *mock_repository.MockDeliveryRepository,
+				_ *mock_repository.MockPaymentRepository,
+				_ *mock_repository.MockItemRepository,
 				txManager *mock_transaction.MockManager,
 				logger *mock_logger.MockLogger,
-				cache *mock_cache.MockCache,
+				_ *mock_cache.MockCache[uuid.UUID, *entity.Order],
 				order *entity.Order,
 			) {
 				logger.EXPECT().Ctx(gomock.Any()).Return(logger).AnyTimes()
@@ -400,7 +403,7 @@ func TestOrderService_CreateOrder(t *testing.T) {
 				itemRepo *mock_repository.MockItemRepository,
 				txManager *mock_transaction.MockManager,
 				logger *mock_logger.MockLogger,
-				cache *mock_cache.MockCache,
+				cache *mock_cache.MockCache[uuid.UUID, *entity.Order],
 				order *entity.Order,
 			) {
 				logger.EXPECT().Ctx(gomock.Any()).Return(logger).AnyTimes()
@@ -415,8 +418,8 @@ func TestOrderService_CreateOrder(t *testing.T) {
 				txManager.EXPECT().ExecuteInTransaction(
 					ctx, "CreateOrder", gomock.Any(),
 				).DoAndReturn(func(
-					ctx context.Context,
-					opName string,
+					_ context.Context,
+					_ string,
 					txFunc func(postgres.QueryExecuter) error,
 				) error {
 					time.Sleep(300 * time.Millisecond)
@@ -474,7 +477,7 @@ func TestOrderService_CreateOrder(t *testing.T) {
 			itemRepo := mock_repository.NewMockItemRepository(ctrl)
 			txManager := mock_transaction.NewMockManager(ctrl)
 			logger := mock_logger.NewMockLogger(ctrl)
-			cache := mock_cache.NewMockCache(ctrl)
+			cache := mock_cache.NewMockCache[uuid.UUID, *entity.Order](ctrl)
 
 			cache.EXPECT().SetOnEvicted(gomock.Any()).AnyTimes()
 
@@ -509,24 +512,26 @@ func TestOrderService_CreateOrder(t *testing.T) {
 
 				if tc.desc == "TransactionError" {
 					if err.Error() != "transaction error" {
-						t.Fatalf("expected 'transaction error', got %q", err.Error())
+						t.Fatalf(
+							"expected 'transaction error', got %q",
+							err.Error(),
+						)
 					}
-				} else {
-					if !errors.Is(err, tc.expected.err) {
-						t.Fatalf("expected error to contain %v, got %v", tc.expected.err, err)
-					}
+				} else if !errors.Is(err, tc.expected.err) {
+					t.Fatalf("expected error to contain %v, got %v", tc.expected.err, err)
 				}
 
 				if resultOrder != nil {
 					t.Error("expected nil order on error, got non-nil")
 				}
-			} else {
-				if err != nil {
-					t.Fatalf("expected no error, got %v", err)
-				}
-				if resultOrder == nil {
-					t.Fatal("expected non-nil order on success")
-				}
+				return
+			}
+
+			if err != nil {
+				t.Fatalf("expected no error, got %v", err)
+			}
+			if resultOrder == nil {
+				t.Fatal("expected non-nil order on success")
 			}
 		})
 	}
@@ -542,6 +547,8 @@ type getOrderTestExpected struct {
 }
 
 func TestOrderService_GetOrder(t *testing.T) {
+	t.Parallel()
+
 	ctx := context.Background()
 
 	testCases := []struct {
@@ -554,7 +561,7 @@ func TestOrderService_GetOrder(t *testing.T) {
 			itemRepo *mock_repository.MockItemRepository,
 			txManager *mock_transaction.MockManager,
 			logger *mock_logger.MockLogger,
-			cache *mock_cache.MockCache,
+			cache *mock_cache.MockCache[uuid.UUID, *entity.Order],
 			order *entity.Order,
 		)
 		input    getOrderTestInput
@@ -564,13 +571,13 @@ func TestOrderService_GetOrder(t *testing.T) {
 			desc:  "FromCache",
 			setup: generateFakeOrder,
 			mocks: func(
-				orderRepo *mock_repository.MockOrderRepository,
-				deliveryRepo *mock_repository.MockDeliveryRepository,
-				paymentRepo *mock_repository.MockPaymentRepository,
-				itemRepo *mock_repository.MockItemRepository,
-				txManager *mock_transaction.MockManager,
+				_ *mock_repository.MockOrderRepository,
+				_ *mock_repository.MockDeliveryRepository,
+				_ *mock_repository.MockPaymentRepository,
+				_ *mock_repository.MockItemRepository,
+				_ *mock_transaction.MockManager,
 				logger *mock_logger.MockLogger,
-				cache *mock_cache.MockCache,
+				cache *mock_cache.MockCache[uuid.UUID, *entity.Order],
 				order *entity.Order,
 			) {
 				logger.EXPECT().Ctx(gomock.Any()).Return(logger).AnyTimes()
@@ -602,9 +609,9 @@ func TestOrderService_GetOrder(t *testing.T) {
 				deliveryRepo *mock_repository.MockDeliveryRepository,
 				paymentRepo *mock_repository.MockPaymentRepository,
 				itemRepo *mock_repository.MockItemRepository,
-				txManager *mock_transaction.MockManager,
+				_ *mock_transaction.MockManager,
 				logger *mock_logger.MockLogger,
-				cache *mock_cache.MockCache,
+				cache *mock_cache.MockCache[uuid.UUID, *entity.Order],
 				order *entity.Order,
 			) {
 				logger.EXPECT().Ctx(gomock.Any()).Return(logger).AnyTimes()
@@ -655,9 +662,9 @@ func TestOrderService_GetOrder(t *testing.T) {
 				deliveryRepo *mock_repository.MockDeliveryRepository,
 				paymentRepo *mock_repository.MockPaymentRepository,
 				itemRepo *mock_repository.MockItemRepository,
-				txManager *mock_transaction.MockManager,
+				_ *mock_transaction.MockManager,
 				logger *mock_logger.MockLogger,
-				cache *mock_cache.MockCache,
+				cache *mock_cache.MockCache[uuid.UUID, *entity.Order],
 				order *entity.Order,
 			) {
 				logger.EXPECT().Ctx(gomock.Any()).Return(logger).AnyTimes()
@@ -694,7 +701,7 @@ func TestOrderService_GetOrder(t *testing.T) {
 			}(),
 			expected: getOrderTestExpected{
 				order: nil,
-				err:   errors.New("service.GetOrder: fetch order from db: invalid data"),
+				err:   entity.ErrDataNotFound,
 			},
 		},
 		{
@@ -702,12 +709,12 @@ func TestOrderService_GetOrder(t *testing.T) {
 			setup: generateFakeOrder,
 			mocks: func(
 				orderRepo *mock_repository.MockOrderRepository,
-				deliveryRepo *mock_repository.MockDeliveryRepository,
-				paymentRepo *mock_repository.MockPaymentRepository,
-				itemRepo *mock_repository.MockItemRepository,
-				txManager *mock_transaction.MockManager,
+				_ *mock_repository.MockDeliveryRepository,
+				_ *mock_repository.MockPaymentRepository,
+				_ *mock_repository.MockItemRepository,
+				_ *mock_transaction.MockManager,
 				logger *mock_logger.MockLogger,
-				cache *mock_cache.MockCache,
+				cache *mock_cache.MockCache[uuid.UUID, *entity.Order],
 				order *entity.Order,
 			) {
 				logger.EXPECT().Ctx(gomock.Any()).Return(logger).AnyTimes()
@@ -735,7 +742,7 @@ func TestOrderService_GetOrder(t *testing.T) {
 			}(),
 			expected: getOrderTestExpected{
 				order: nil,
-				err:   errors.New("service.GetOrder: fetch order from db: data not found"),
+				err:   entity.ErrDataNotFound,
 			},
 		},
 		{
@@ -743,12 +750,12 @@ func TestOrderService_GetOrder(t *testing.T) {
 			setup: generateFakeOrder,
 			mocks: func(
 				orderRepo *mock_repository.MockOrderRepository,
-				deliveryRepo *mock_repository.MockDeliveryRepository,
-				paymentRepo *mock_repository.MockPaymentRepository,
-				itemRepo *mock_repository.MockItemRepository,
-				txManager *mock_transaction.MockManager,
+				_ *mock_repository.MockDeliveryRepository,
+				_ *mock_repository.MockPaymentRepository,
+				_ *mock_repository.MockItemRepository,
+				_ *mock_transaction.MockManager,
 				logger *mock_logger.MockLogger,
-				cache *mock_cache.MockCache,
+				cache *mock_cache.MockCache[uuid.UUID, *entity.Order],
 				order *entity.Order,
 			) {
 				logger.EXPECT().Ctx(gomock.Any()).Return(logger).AnyTimes()
@@ -776,7 +783,7 @@ func TestOrderService_GetOrder(t *testing.T) {
 			}(),
 			expected: getOrderTestExpected{
 				order: nil,
-				err:   errors.New("service.GetOrder: fetch order from db: database error"),
+				err:   errors.New("database error"),
 			},
 		},
 		{
@@ -787,9 +794,9 @@ func TestOrderService_GetOrder(t *testing.T) {
 				deliveryRepo *mock_repository.MockDeliveryRepository,
 				paymentRepo *mock_repository.MockPaymentRepository,
 				itemRepo *mock_repository.MockItemRepository,
-				txManager *mock_transaction.MockManager,
+				_ *mock_transaction.MockManager,
 				logger *mock_logger.MockLogger,
-				cache *mock_cache.MockCache,
+				cache *mock_cache.MockCache[uuid.UUID, *entity.Order],
 				order *entity.Order,
 			) {
 				logger.EXPECT().Ctx(gomock.Any()).Return(logger).AnyTimes()
@@ -809,7 +816,7 @@ func TestOrderService_GetOrder(t *testing.T) {
 					Return(order, nil).Times(1)
 
 				deliveryRepo.EXPECT().GetByOrderUID(gomock.Any(), order.OrderUID).
-					DoAndReturn(func(ctx context.Context, orderUID uuid.UUID) (*entity.Delivery, error) {
+					DoAndReturn(func(_ context.Context, _ uuid.UUID) (*entity.Delivery, error) {
 						time.Sleep(600 * time.Millisecond)
 						return order.Delivery, nil
 					}).
@@ -857,7 +864,7 @@ func TestOrderService_GetOrder(t *testing.T) {
 			itemRepo := mock_repository.NewMockItemRepository(ctrl)
 			txManager := mock_transaction.NewMockManager(ctrl)
 			logger := mock_logger.NewMockLogger(ctrl)
-			cache := mock_cache.NewMockCache(ctrl)
+			cache := mock_cache.NewMockCache[uuid.UUID, *entity.Order](ctrl)
 
 			cache.EXPECT().SetOnEvicted(gomock.Any()).AnyTimes()
 
@@ -895,13 +902,14 @@ func TestOrderService_GetOrder(t *testing.T) {
 				if resultOrder != nil {
 					t.Error("expected nil order on error, got non-nil")
 				}
-			} else {
-				if err != nil {
-					t.Fatalf("expected no error, got %v", err)
-				}
-				if resultOrder == nil {
-					t.Fatal("expected non-nil order on success")
-				}
+				return
+			}
+
+			if err != nil {
+				t.Fatalf("expected no error, got %v", err)
+			}
+			if resultOrder == nil {
+				t.Fatal("expected non-nil order on success")
 			}
 		})
 	}

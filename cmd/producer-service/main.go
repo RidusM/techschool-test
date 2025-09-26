@@ -1,3 +1,4 @@
+//nolint:mnd
 package main
 
 import (
@@ -19,10 +20,10 @@ import (
 func main() {
 	kafkaBrokers := flag.String(
 		"brokers",
-		"localhost:9092",
+		"kafka:29092",
 		"Kafka bootstrap brokers to connect to, as a comma separated list",
 	)
-	kafkaTopic := flag.String("topic", "orders", "Kafka topic to write messages to")
+	kafkaTopic := flag.String("topic", "orders-dev", "Kafka topic to write messages to")
 	numMessages := flag.Int("count", 1, "Number of messages to send")
 	interval := flag.Duration("interval", 1*time.Second, "Interval between sending messages")
 
@@ -94,11 +95,10 @@ func sendMessage(ctx context.Context, writer *kafka.Writer) {
 	err = writer.WriteMessages(writeCtx, msg)
 	if err != nil {
 		log.Printf("Failed to write message to Kafka: %v", err)
-	} else {
-		log.Printf("Successfully sent order UID: %s", order.OrderUID.String())
 	}
-}
 
+	log.Printf("Successfully sent order UID: %s", order.OrderUID.String())
+}
 
 func generateFakeDelivery() *entity.Delivery {
 	return &entity.Delivery{
@@ -119,7 +119,7 @@ func generateFakePayment() *entity.Payment {
 		Currency:     gofakeit.CurrencyShort(),
 		Provider:     gofakeit.Word(),
 		Amount:       uint64(gofakeit.UintRange(1000, 10000)),
-		PaymentDt:    int64(gofakeit.DateRange(time.Now().AddDate(-1, 0, 0), time.Now()).Unix()),
+		PaymentDt:    gofakeit.DateRange(time.Now().AddDate(-1, 0, 0), time.Now()).Unix(),
 		Bank:         gofakeit.BS(),
 		DeliveryCost: uint64(gofakeit.UintRange(100, 500)),
 		GoodsTotal:   uint64(gofakeit.UintRange(500, 9000)),
@@ -155,17 +155,17 @@ func generateFakeOrder() *entity.Order {
 	return &entity.Order{
 		OrderUID:          orderUID,
 		TrackNumber:       gofakeit.UUID(),
-		Entry:             gofakeit.Word(),
+		Entry:             gofakeit.LetterN(10),
 		Delivery:          generateFakeDelivery(),
 		Payment:           generateFakePayment(),
 		Items:             items,
-		Locale:            gofakeit.Country(),
+		Locale:            gofakeit.LetterN(2),
 		InternalSignature: gofakeit.UUID(),
 		CustomerID:        gofakeit.Username(),
 		DeliveryService:   gofakeit.Word(),
 		Shardkey:          gofakeit.Word(),
 		SmID:              gofakeit.Number(1, 10),
-		DateCreated:       gofakeit.Date().Format(time.RFC3339),
-		OofShard:          gofakeit.Word(),
+		DateCreated:       gofakeit.Date(),
+		OofShard:          gofakeit.LetterN(1),
 	}
 }

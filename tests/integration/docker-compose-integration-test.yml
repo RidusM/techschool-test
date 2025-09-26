@@ -1,7 +1,50 @@
+networks:
+  integration-test-network:
+    driver: bridge
+    name: integration-test-network
+
 services:
+  db:
+    image: postgres:17-alpine
+    container_name: order-db-integration
+    environment:
+      POSTGRES_DB: ${DB_NAME:-orders_db}
+      POSTGRES_USER: ${DB_USER:-postgres}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-postgres}
+    ports:
+      - "${DB_PORT:-5432}:${DB_PORT:-5432}"
+    networks:
+      - integration-test-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-postgres} -d ${DB_NAME:-orders_db}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    restart: unless-stopped
+
+
+  db-migrator:
+    image: migrate/migrate
+    container_name: order-db-migrator-integration
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - integration-test-network
+    volumes:
+      - ../../migrations:/migrations
+    command:
+      - "-path"
+      - "/migrations"
+      - "-database"
+      - "postgres://${DB_USER}:${DB_PASSWORD}@${DB_HOST}:${DB_PORT}/${DB_NAME}?sslmode=${DB_SSL_MODE}"
+      - "up"
+    restart: "no"
+
   integration-test:
     build:
-      context: .
+      context: ../../
       dockerfile: tests/integration/Dockerfile
     container_name: order-integration-test
     depends_on:
@@ -9,33 +52,11 @@ services:
         condition: service_healthy
       db-migrator:
         condition: service_completed_successfully
-      kafka:
-        condition: service_started
     networks:
-      - app-network
+      - integration-test-network
     environment:
-      DB_HOST: db
-      DB_PORT: 5432
-      DB_NAME: orders_db
-      DB_USER: postgres
-      DB_PASSWORD: postgres
-      DB_SSL_MODE: disable
-      KAFKA_BROKERS: kafka:29092
-      CONFIG_PATH: configs/test.env
+      CONFIG_PATH: /app/configs/dev.env
       INTEGRATION_TEST: "true"
-    command: ["go", "test", "-v", "./integration-test/..."]
     volumes:
-      - ./migrations:/app/migrations:ro
-      - ./configs:/app/configs:ro
-  db-migrator:
-    image: migrate/migrate
-    container_name: order-db-migrator
-    depends_on:
-      db:
-        condition: service_healthy
-    networks:
-      - app-network
-    volumes:
-      - ./migrations:/migrations
-    command: ["-path", "/migrations", "-database", "postgres://postgres:postgres@db:5432/orders_db?sslmode=disable", "up"]
+      - ../../configs:/app/configs
     restart: "no"
