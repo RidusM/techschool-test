@@ -2,14 +2,14 @@
 
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
-Высоконагруженный микросервис для обработки заказов с использованием Kafka, PostgreSQL и кэширования. Разработан как решение тестового задания для Wildberries.
+Высоконагруженный микросервис для обработки заказов с использованием Kafka, PostgreSQL и LRU кэшем. Разработан как решение тестового задания L0 для WB Техношколы.
 
 ## 🏗️ Архитектура
 
 ```
 ┌─────────────┐     ┌─────────────┐    ┌─────────────┐
 │   Kafka     │     │ PostgreSQL  │    │   LRU       │
-│  Producer   │───▶ │   Orders    │    │   Cache     │
+│  Producer   │───> │   Orders    │    │   Cache     │
 └─────────────┘     └─────────────┘    └─────────────┘
        │                   ▲                   ▲
        │                   │                   │
@@ -37,7 +37,7 @@
 - **Structured Logging** - Структурированное логирование с использованием `zap`
 - **Metrics** - Экспорт метрик в формате Prometheus
 - **Swagger Documentation** - Автоматически сгенерированная документация API
-- **Comprehensive Testing** - Unit, интеграционные и E2E тесты
+- **Testing** - Unit и интеграционные тесты
 
 ## 🚀 Технологии
 
@@ -49,8 +49,8 @@
 - **prometheus/client_golang** (Metrics)
 - **testify** (Testing)
 - **Docker & Docker Compose**
-- **PostgreSQL 16**
-- **Kafka** (Confluent Platform 7.6.1)
+- **PostgreSQL 17**
+- **Kafka** (Confluent Platform 7.9.2)
 
 ## 🚀 Быстрый старт
 
@@ -81,7 +81,7 @@ make compose-up-all
 curl http://localhost:8080/health
 
 # Получение заказа
-curl http://localhost:8080/api/v1/orders/{order_uid}
+curl http://localhost:8080/orders/{order_uid}
 ```
 
 ### Использование
@@ -89,12 +89,16 @@ curl http://localhost:8080/api/v1/orders/{order_uid}
 1. Откройте веб-интерфейс: `http://localhost:8080`
 2. Отправьте тестовое сообщение в Kafka:
 ```bash
+# Локальный запуск (требует .env)
 make run-producer
+
+# Запуск через docker compose
+docker run kafka-producer
 ```
 3. Введите UID заказа в поле поиска веб-интерфейса
 4. Проверьте API напрямую:
 ```bash
-curl http://localhost:8080/api/v1/orders/b563feb7b2b84b6test
+curl http://localhost:8080/orders/b563feb7b2b84b6test
 ```
 
 ## 📊 Мониторинг и документация
@@ -109,31 +113,6 @@ curl http://localhost:8080/api/v1/orders/b563feb7b2b84b6test
 
 ### Переменные окружения
 
-Основные настройки в `.env`:
-
-```env
-# Приложение
-APP_NAME=OrderService
-APP_VERSION=1.0.0
-APP_PORT=:8080
-
-# База данных
-DB_HOST=localhost
-DB_PORT=5432
-DB_NAME=orders
-DB_USER=postgres
-DB_PASSWORD=postgres123
-
-# Кэш
-CACHE_CAPACITY=1000
-CACHE_TTL=1h
-
-# Kafka
-KAFKA_GROUP_ID=order-service-group
-KAFKA_BROKERS=kafka1:39092,kafka2:39093,kafka3:39094
-KAFKA_TOPIC=orders
-```
-
 Полный пример конфигурации см. в `.env.example`
 
 ## 🏗️ Структура проекта
@@ -143,7 +122,7 @@ KAFKA_TOPIC=orders
 │   ├── order-service/      # Основной сервис
 │   └── producer-service/   # Эмулятор Kafka producer
 ├── configs/               # Конфигурации
-├── docs/                  # Swagger документация (генерируется)
+├── docs/                  # Swagger документация (автогенерируется)
 ├── internal/              # Внутренняя логика
 │   ├── app/              # Инициализация приложения
 │   ├── config/           # Конфигурация
@@ -160,9 +139,9 @@ KAFKA_TOPIC=orders
 │   ├── logger/          # Структурированное логирование
 │   ├── metric/          # Prometheus метрики
 │   └── storage/         # PostgreSQL клиент
+│       └── transaction/ # Менеджер работы с транзакциями
 ├── tests/               # Тесты
 │   ├── integration/     # Интеграционные тесты
-│   └── e2e/            # End-to-end тесты
 ├── web/                # Веб-интерфейс
 └── volumes/            # Docker volumes
 ```
@@ -178,7 +157,7 @@ docker-compose --env-file .env up -d db kafka zookeeper
 # Применение миграций
 make migrate-up
 
-# Запуск сервиса
+# Запуск сервиса (требует .env)
 make run
 ```
 
@@ -191,8 +170,14 @@ make test
 # Интеграционные тесты
 make compose-up-integration-test
 
-# Линтинг
+# Линтинг | Golangci linter
 make linter-golangci
+
+# Линтинг | Hadolint
+make linter-hadolint
+
+# Линтинг | DotEnv linter
+make linter-dotenv
 
 # Проверка зависимостей
 make deps-audit
@@ -233,7 +218,7 @@ Health check endpoint
 }
 ```
 
-### GET /api/v1/orders/{order_uid}
+### GET /orders/{order_uid}
 Получение заказа по ID
 
 **Response:**
@@ -299,14 +284,6 @@ docker run -p 8080:8080 order-service
 - Graceful error handling
 - Безопасная конфигурация подключений
 
-## 🤝 Вклад в проект
-
-1. Fork репозитория
-2. Создайте feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit изменения (`git commit -m 'Add amazing feature'`)
-4. Push в branch (`git push origin feature/amazing-feature`)
-5. Откройте Pull Request
-
 ## 📄 Лицензия
 
-MIT License - см. файл [LICENSE](LICENSE) для деталей.
+MIT 0 License - см. файл [LICENSE](LICENSE) для деталей.

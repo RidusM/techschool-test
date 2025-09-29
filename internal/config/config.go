@@ -24,7 +24,7 @@ type (
 		Kafka    Kafka    `env-prefix:"KAFKA_"`
 		DLQ      DLQ      `env-prefix:"DLQ_"`
 		Metrics  Metrics  `env-prefix:"METRICS_"`
-		Env      string   `                      env:"ENV" env-default:"local" validate:"oneof=local dev staging prod"`
+		Env      string   `env:"ENV" env-default:"local" validate:"oneof=local dev staging prod"`
 	}
 
 	App struct {
