@@ -11,12 +11,12 @@ const docTemplate = `{
         "title": "{{.Title}}",
         "termsOfService": "http://swagger.io/terms/",
         "contact": {
-            "name": "API Support",
-            "email": "support@example.com"
+            "name": "API Creator",
+            "email": "stormkillpeople@gmail.com"
         },
         "license": {
-            "name": "Apache 2.0",
-            "url": "http://www.apache.org/licenses/LICENSE-2.0.html"
+            "name": "MIT-0",
+            "url": "https://github.com/aws/mit-0"
         },
         "version": "{{.Version}}"
     },
@@ -49,19 +49,7 @@ const docTemplate = `{
                     "200": {
                         "description": "Успешный ответ с данными заказа",
                         "schema": {
-                            "allOf": [
-                                {
-                                    "$ref": "#/definitions/httpt.SuccessResponse"
-                                },
-                                {
-                                    "type": "object",
-                                    "properties": {
-                                        "data": {
-                                            "$ref": "#/definitions/httpt.Order"
-                                        }
-                                    }
-                                }
-                            ]
+                            "$ref": "#/definitions/httpt.SuccessResponse"
                         }
                     },
                     "400": {
@@ -242,19 +230,12 @@ const docTemplate = `{
         "httpt.ErrorResponse": {
             "type": "object",
             "properties": {
-                "details": {
-                    "type": "object",
-                    "additionalProperties": true
-                },
                 "error": {
-                    "type": "string"
-                },
-                "message": {
                     "type": "string"
                 }
             }
         },
-        "httpt.Order": {
+        "httpt.SuccessResponse": {
             "type": "object",
             "required": [
                 "customer_id",
@@ -326,22 +307,6 @@ const docTemplate = `{
                     "maxLength": 50
                 }
             }
-        },
-        "httpt.SuccessResponse": {
-            "type": "object",
-            "properties": {
-                "data": {},
-                "message": {
-                    "type": "string"
-                }
-            }
-        }
-    },
-    "securityDefinitions": {
-        "BearerAuth": {
-            "type": "apiKey",
-            "name": "Authorization",
-            "in": "header"
         }
     }
 }`
@@ -350,8 +315,8 @@ const docTemplate = `{
 var SwaggerInfo = &swag.Spec{
 	Version:          "1.0",
 	Host:             "localhost:8080",
-	BasePath:         "/api/v1",
-	Schemes:          []string{"http", "https"},
+	BasePath:         "/",
+	Schemes:          []string{},
 	Title:            "Order Service API",
 	Description:      "API для управления заказами",
 	InfoInstanceName: "swagger",

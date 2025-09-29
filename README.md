@@ -173,7 +173,7 @@ KAFKA_TOPIC=orders
 
 ```bash
 # Запуск зависимостей
-docker-compose up -d db kafka zookeeper
+docker-compose --env-file .env up -d db kafka zookeeper
 
 # Применение миграций
 make migrate-up

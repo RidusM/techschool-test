@@ -1,4 +1,4 @@
-basePath: /api/v1
+basePath: /
 definitions:
   entity.Delivery:
     properties:
@@ -117,15 +117,10 @@ definitions:
     type: object
   httpt.ErrorResponse:
     properties:
-      details:
-        additionalProperties: true
-        type: object
       error:
         type: string
-      message:
-        type: string
     type: object
-  httpt.Order:
+  httpt.SuccessResponse:
     properties:
       customer_id:
         maxLength: 50
@@ -180,21 +175,15 @@ definitions:
     - sm_id
     - track_number
     type: object
-  httpt.SuccessResponse:
-    properties:
-      data: {}
-      message:
-        type: string
-    type: object
 host: localhost:8080
 info:
   contact:
-    email: support@example.com
-    name: API Support
+    email: stormkillpeople@gmail.com
+    name: API Creator
   description: API для управления заказами
   license:
-    name: Apache 2.0
-    url: http://www.apache.org/licenses/LICENSE-2.0.html
+    name: MIT-0
+    url: https://github.com/aws/mit-0
   termsOfService: http://swagger.io/terms/
   title: Order Service API
   version: "1.0"
@@ -216,12 +205,7 @@ paths:
         "200":
           description: Успешный ответ с данными заказа
           schema:
-            allOf:
-            - $ref: '#/definitions/httpt.SuccessResponse'
-            - properties:
-                data:
-                  $ref: '#/definitions/httpt.Order'
-              type: object
+            $ref: '#/definitions/httpt.SuccessResponse'
         "400":
           description: Неверный формат order_uid
           schema:
@@ -237,12 +221,4 @@ paths:
       summary: Получить заказ
       tags:
       - Orders
-schemes:
-- http
-- https
-securityDefinitions:
-  BearerAuth:
-    in: header
-    name: Authorization
-    type: apiKey
 swagger: "2.0"

@@ -14,16 +14,12 @@ import (
 // @version         1.0
 // @description     API для управления заказами
 // @termsOfService  http://swagger.io/terms/
-// @contact.name    API Support
-// @contact.email   support@example.com
-// @license.name    Apache 2.0
-// @license.url     http://www.apache.org/licenses/LICENSE-2.0.html
+// @contact.name    API Creator
+// @contact.email   stormkillpeople@gmail.com
+// @license.name    MIT-0
+// @license.url     https://github.com/aws/mit-0
 // @host            localhost:8080
-// @BasePath        /api/v1
-// @schemes         http https
-// @securityDefinitions.apikey BearerAuth
-// @in              header
-// @name            Authorization
+// @BasePath        /
 func (h *OrderHandler) setupRoutes() {
 	h.router.GET("/health", func(c *gin.Context) {
 		c.Status(http.StatusOK)

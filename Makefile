@@ -51,10 +51,11 @@ linter-golangci: ## Run golangci-lint linter
 linter-hadolint: ## Run hadolint on Dockerfiles (requires hadolint installed)
 	hadolint Dockerfile
 	hadolint Dockerfile.producer
+	hadolint tests/integration/Dockerfile
 
 .PHONY: linter-dotenv
 linter-dotenv: ## Run dotenv-linter on .env files (requires dotenv-linter installed)
-	dotenv-linter || echo "dotenv-linter not found or issues found in .env files"
+	dotenv-linter -r || echo "dotenv-linter not found or issues found in .env files"
 
 .PHONY: swag-v1
 swag-v1: ## Generate Swagger documentation
@@ -87,9 +88,9 @@ compose-up: ## Run infrastructure (db, kafka, zookeeper) only
 	$(BASE_STACK) up --build -d db kafka zookeeper
 	$(BASE_STACK) logs -f
 
-.PHONY: migrate-db
+.PHONY: migrate-up
 migrate-db: ## Run migrations for db (requires db to be running)
-	$(BASE_STACK) up --build -d db-migrator
+	$(BASE_STACK) --env-file .env up --build -d db-migrator
 	$(BASE_STACK) logs -f
 
 .PHONY: compose-up-all
@@ -165,7 +166,7 @@ docker-prune: ## Remove unused Docker data (stopped containers, networks, images
 .PHONY: docker-rm-volume
 docker-rm-volume: ## Remove Docker volume (example for pgdata)
 	@echo "Removing Docker volume 'pgdata'..."
-	docker volume rm l1_pgdata 
-	docker volume rm l1_prometheus_data
-	docker volume rm l1_grafana_data
+	docker volume rm l0_pgdata 
+	docker volume rm l0_prometheus_data
+	docker volume rm l0_grafana_data
 	@echo "Volume removal attempted."

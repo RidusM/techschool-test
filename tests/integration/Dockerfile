@@ -1,4 +1,4 @@
-FROM golang:1.25.0-alpine AS builder
+FROM golang:1.25.0-alpine AS go-builder
 
 WORKDIR /app
 
@@ -9,9 +9,11 @@ COPY . .
 
 RUN go test -c ./tests/integration/main -o integration-test
 
-FROM alpine:latest
+FROM alpine:3.22
 
-COPY --from=builder /app/integration-test ./integration-test
-COPY --from=builder /app/configs ./configs
+WORKDIR /app
+
+COPY --from=go-builder /app/integration-test ./integration-test
+COPY --from=go-builder /app/configs ./configs
 
 CMD ["./integration-test", "-test.v"]
