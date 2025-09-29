@@ -18,7 +18,12 @@ const (
 )
 
 func (l *ZapLogger) WithRequestID(ctx context.Context, requestID string) context.Context {
-	return context.WithValue(ctx, requestIDKey, requestID)
+    ctx = context.WithValue(ctx, requestIDKey, requestID)
+	
+    logger := l.logger.With(zap.String("request_id", requestID))
+    ctx = context.WithValue(ctx, loggerKey, logger)
+    
+    return ctx
 }
 
 func (l *ZapLogger) GetRequestID(ctx context.Context) string {

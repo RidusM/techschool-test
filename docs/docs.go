@@ -11,7 +11,7 @@ const docTemplate = `{
         "title": "{{.Title}}",
         "termsOfService": "http://swagger.io/terms/",
         "contact": {
-            "name": "API Creator",
+            "name": "RidusM",
             "email": "stormkillpeople@gmail.com"
         },
         "license": {
@@ -49,7 +49,7 @@ const docTemplate = `{
                     "200": {
                         "description": "Успешный ответ с данными заказа",
                         "schema": {
-                            "$ref": "#/definitions/httpt.SuccessResponse"
+                            "$ref": "#/definitions/entity.Order"
                         }
                     },
                     "400": {
@@ -175,67 +175,7 @@ const docTemplate = `{
                 }
             }
         },
-        "entity.Payment": {
-            "type": "object",
-            "required": [
-                "amount",
-                "bank",
-                "currency",
-                "delivery_cost",
-                "goods_total",
-                "payment_dt",
-                "provider",
-                "transaction"
-            ],
-            "properties": {
-                "amount": {
-                    "type": "integer",
-                    "minimum": 1
-                },
-                "bank": {
-                    "type": "string",
-                    "maxLength": 50
-                },
-                "currency": {
-                    "type": "string"
-                },
-                "custom_fee": {
-                    "type": "integer",
-                    "minimum": 0
-                },
-                "delivery_cost": {
-                    "type": "integer",
-                    "minimum": 0
-                },
-                "goods_total": {
-                    "type": "integer",
-                    "minimum": 1
-                },
-                "payment_dt": {
-                    "type": "integer"
-                },
-                "provider": {
-                    "type": "string",
-                    "maxLength": 50
-                },
-                "request_id": {
-                    "type": "string",
-                    "maxLength": 50
-                },
-                "transaction": {
-                    "type": "string"
-                }
-            }
-        },
-        "httpt.ErrorResponse": {
-            "type": "object",
-            "properties": {
-                "error": {
-                    "type": "string"
-                }
-            }
-        },
-        "httpt.SuccessResponse": {
+        "entity.Order": {
             "type": "object",
             "required": [
                 "customer_id",
@@ -305,6 +245,66 @@ const docTemplate = `{
                 "track_number": {
                     "type": "string",
                     "maxLength": 50
+                }
+            }
+        },
+        "entity.Payment": {
+            "type": "object",
+            "required": [
+                "amount",
+                "bank",
+                "currency",
+                "delivery_cost",
+                "goods_total",
+                "payment_dt",
+                "provider",
+                "transaction"
+            ],
+            "properties": {
+                "amount": {
+                    "type": "integer",
+                    "minimum": 1
+                },
+                "bank": {
+                    "type": "string",
+                    "maxLength": 50
+                },
+                "currency": {
+                    "type": "string"
+                },
+                "custom_fee": {
+                    "type": "integer",
+                    "minimum": 0
+                },
+                "delivery_cost": {
+                    "type": "integer",
+                    "minimum": 0
+                },
+                "goods_total": {
+                    "type": "integer",
+                    "minimum": 1
+                },
+                "payment_dt": {
+                    "type": "integer"
+                },
+                "provider": {
+                    "type": "string",
+                    "maxLength": 50
+                },
+                "request_id": {
+                    "type": "string",
+                    "maxLength": 50
+                },
+                "transaction": {
+                    "type": "string"
+                }
+            }
+        },
+        "httpt.ErrorResponse": {
+            "type": "object",
+            "properties": {
+                "error": {
+                    "type": "string"
                 }
             }
         }

@@ -76,51 +76,7 @@ definitions:
     - total_price
     - track_number
     type: object
-  entity.Payment:
-    properties:
-      amount:
-        minimum: 1
-        type: integer
-      bank:
-        maxLength: 50
-        type: string
-      currency:
-        type: string
-      custom_fee:
-        minimum: 0
-        type: integer
-      delivery_cost:
-        minimum: 0
-        type: integer
-      goods_total:
-        minimum: 1
-        type: integer
-      payment_dt:
-        type: integer
-      provider:
-        maxLength: 50
-        type: string
-      request_id:
-        maxLength: 50
-        type: string
-      transaction:
-        type: string
-    required:
-    - amount
-    - bank
-    - currency
-    - delivery_cost
-    - goods_total
-    - payment_dt
-    - provider
-    - transaction
-    type: object
-  httpt.ErrorResponse:
-    properties:
-      error:
-        type: string
-    type: object
-  httpt.SuccessResponse:
+  entity.Order:
     properties:
       customer_id:
         maxLength: 50
@@ -175,11 +131,55 @@ definitions:
     - sm_id
     - track_number
     type: object
+  entity.Payment:
+    properties:
+      amount:
+        minimum: 1
+        type: integer
+      bank:
+        maxLength: 50
+        type: string
+      currency:
+        type: string
+      custom_fee:
+        minimum: 0
+        type: integer
+      delivery_cost:
+        minimum: 0
+        type: integer
+      goods_total:
+        minimum: 1
+        type: integer
+      payment_dt:
+        type: integer
+      provider:
+        maxLength: 50
+        type: string
+      request_id:
+        maxLength: 50
+        type: string
+      transaction:
+        type: string
+    required:
+    - amount
+    - bank
+    - currency
+    - delivery_cost
+    - goods_total
+    - payment_dt
+    - provider
+    - transaction
+    type: object
+  httpt.ErrorResponse:
+    properties:
+      error:
+        type: string
+    type: object
 host: localhost:8080
 info:
   contact:
     email: stormkillpeople@gmail.com
-    name: API Creator
+    name: RidusM
   description: API для управления заказами
   license:
     name: MIT-0
@@ -205,7 +205,7 @@ paths:
         "200":
           description: Успешный ответ с данными заказа
           schema:
-            $ref: '#/definitions/httpt.SuccessResponse'
+            $ref: '#/definitions/entity.Order'
         "400":
           description: Неверный формат order_uid
           schema:

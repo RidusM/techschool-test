@@ -6,13 +6,7 @@ import "wbtest/internal/entity"
 
 // swagger:model ErrorResponse
 type ErrorResponse struct {
-	Error   string `json:"error"`
-}
-
-// swagger:model SuccessResponse
-type SuccessResponse struct {
-	Message string `json:"message"`
-	Data    any    `json:"data,omitempty"`
+	Error string `json:"error"`
 }
 
 // swagger:model Order

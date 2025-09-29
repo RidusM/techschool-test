@@ -14,7 +14,7 @@ import (
 // @version         1.0
 // @description     API для управления заказами
 // @termsOfService  http://swagger.io/terms/
-// @contact.name    API Creator
+// @contact.name    RidusM
 // @contact.email   stormkillpeople@gmail.com
 // @license.name    MIT-0
 // @license.url     https://github.com/aws/mit-0

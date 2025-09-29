@@ -21,7 +21,7 @@ const (
 // @Accept json
 // @Produce json
 // @Param order_uid path string true "Уникальный идентификатор заказа"
-// @Success 200 {object} httpt.SuccessResponse{data=httpt.Order} "Успешный ответ с данными заказа"
+// @Success 200 {object} entity.Order "Успешный ответ с данными заказа"
 // @Failure 400 {object} httpt.ErrorResponse "Неверный формат order_uid"
 // @Failure 404 {object} httpt.ErrorResponse "Заказ не найден"
 // @Failure 500 {object} httpt.ErrorResponse "Внутренняя ошибка сервера"
@@ -51,8 +51,5 @@ func (h *OrderHandler) getOrderHandler(c *gin.Context) {
 		logger.String("order_uid", orderUIDStr),
 	)
 
-	c.JSON(http.StatusOK, SuccessResponse{
-		Message: "Order retrieved successfully",
-		Data:    order,
-	})
+	c.JSON(http.StatusOK, order)
 }
