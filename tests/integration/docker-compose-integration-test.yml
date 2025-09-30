@@ -1,0 +1,62 @@
+networks:
+  integration-test-network:
+    driver: bridge
+    name: integration-test-network
+
+services:
+  db:
+    image: postgres:17-alpine
+    container_name: order-db-integration
+    environment:
+      POSTGRES_DB: ${DB_NAME:-orders_db}
+      POSTGRES_USER: ${DB_USER:-postgres}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-postgres}
+    ports:
+      - "${DB_PORT:-5432}:${DB_PORT:-5432}"
+    networks:
+      - integration-test-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-postgres} -d ${DB_NAME:-orders_db}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    restart: unless-stopped
+
+
+  db-migrator:
+    image: migrate/migrate
+    container_name: order-db-migrator-integration
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - integration-test-network
+    volumes:
+      - ../../migrations:/migrations
+    command:
+      - "-path"
+      - "/migrations"
+      - "-database"
+      - "postgres://${DB_USER}:${DB_PASSWORD}@${DB_HOST}:${DB_PORT}/${DB_NAME}?sslmode=${DB_SSL_MODE}"
+      - "up"
+    restart: "no"
+
+  integration-test:
+    build:
+      context: ../../
+      dockerfile: tests/integration/Dockerfile
+    container_name: order-integration-test
+    depends_on:
+      db:
+        condition: service_healthy
+      db-migrator:
+        condition: service_completed_successfully
+    networks:
+      - integration-test-network
+    environment:
+      CONFIG_PATH: /app/configs/dev.env
+      INTEGRATION_TEST: "true"
+    volumes:
+      - ../../configs:/app/configs
+    restart: "no"
