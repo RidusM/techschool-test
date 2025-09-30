@@ -1,4 +1,4 @@
-# Order Service - Микросервис для обработки заказов
+# Order Service - Микросервис для обработки заказов | Ready To Check
 
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
